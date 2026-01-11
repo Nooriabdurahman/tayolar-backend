@@ -8,74 +8,106 @@ datasource db {
 }
 
 model User {
-  id        String   @id @default(uuid())
-  email     String   @unique
-  password  String
-  name      String
-  role      String   @default("CLIENT") // CLIENT or TAILOR
-  isVerified Boolean @default(false)
+  id               String   @id @default(uuid())
+  email            String   @unique
+  password         String
+  name             String
+  role             String   @default("CLIENT") // CLIENT or TAILOR
+  isVerified       Boolean  @default(false)
   verificationCode String?
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  createdAt        DateTime @default(now())
+  updatedAt        DateTime @updatedAt
 
-  profile   Profile?
-  services  Service[]
-  orders    Order[]   @relation("ClientOrders")
-  sales     Order[]   @relation("TailorOrders")
-  jobs      Job[]     @relation("ClientJobs")
+  profile  Profile?
+  services Service[]
+  orders   Order[]   @relation("ClientOrders")
+  sales    Order[]   @relation("TailorOrders")
+  jobs     Job[]     @relation("ClientJobs")
 }
 
 model Profile {
-  id          String   @id @default(uuid())
-  bio         String?
-  location    String?
-  avatarUrl   String?
-  portfolio   String?  // JSON string for list of image URLs
-  userId      String   @unique
-  user        User     @relation(fields: [userId], references: [id])
+  id        String  @id @default(uuid())
+  bio       String?
+  location  String?
+  avatarUrl String?
+  portfolio String? // JSON string for list of image URLs
+  userId    String  @unique
+  user      User    @relation(fields: [userId], references: [id])
 }
 
 model Service {
-  id          String   @id @default(uuid())
-  title       String
-  description String
-  price       Float
-  imageUrl    String?
-  delivery    String?
+  id           String   @id @default(uuid())
+  title        String
+  description  String
+  price        Float
+  imageUrl     String?
+  delivery     String?
   contactPhone String?
   contactEmail String?
-  category    String?
-  tailorId    String
-  tailor      User     @relation(fields: [tailorId], references: [id])
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
+  category     String?
+  tailorId     String
+  tailor       User     @relation(fields: [tailorId], references: [id])
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
 }
 
 model Job {
-  id          String   @id @default(uuid())
-  title       String
-  description String
-  budget      Float
-  category    String
-  delivery    String? // Optional deadline/delivery preference
+  id           String   @id @default(uuid())
+  title        String
+  description  String
+  budget       Float
+  category     String
+  delivery     String? // Optional deadline/delivery preference
   contactPhone String?
   contactEmail String?
-  imageUrl    String? // For clothing reference
-  clientId    String
-  client      User     @relation("ClientJobs", fields: [clientId], references: [id])
-  status      String   @default("OPEN") // OPEN, ASSIGNED, COMPLETED, CANCELLED
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
+  imageUrl     String? // For clothing reference
+  clientId     String
+  client       User     @relation("ClientJobs", fields: [clientId], references: [id])
+  status       String   @default("OPEN") // OPEN, ASSIGNED, COMPLETED, CANCELLED
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
 }
 
 model Order {
+  id               String      @id @default(uuid())
+  serviceId        String
+  clientId         String
+  tailorId         String
+  status           String      @default("PENDING") // PENDING, ACCEPTED, COMPLETED, CANCELLED
+  client           User        @relation("ClientOrders", fields: [clientId], references: [id])
+  tailor           User        @relation("TailorOrders", fields: [tailorId], references: [id])
+  createdAt        DateTime    @default(now())
+  updatedAt        DateTime    @updatedAt
+  commissionAmount Float? // Commission amount deducted
+  commission       Commission? @relation("OrderCommission")
+}
+
+model AdminCard {
+  id         String   @id @default(uuid())
+  cardNumber String // Encrypted or masked
+  cardHolder String
+  expiry     String
+  cvc        String? // Optional, encrypted
+  imageUrl   String? // Card image stored in Vercel Blob
+  isActive   Boolean  @default(true)
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+}
+
+model Commission {
   id        String   @id @default(uuid())
-  serviceId String
-  clientId  String
-  tailorId  String
-  status    String   @default("PENDING") // PENDING, ACCEPTED, COMPLETED, CANCELLED
-  client    User     @relation("ClientOrders", fields: [clientId], references: [id])
-  tailor    User     @relation("TailorOrders", fields: [tailorId], references: [id])
+  rate      Float    @default(10.0) // Commission rate in percentage
+  orderId   String   @unique
+  order     Order    @relation("OrderCommission", fields: [orderId], references: [id])
+  amount    Float // Calculated commission amount
+  status    String   @default("PENDING") // PENDING, PAID
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model CommissionSettings {
+  id        String   @id @default(uuid())
+  rate      Float    @default(10.0) // Global commission rate
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 }

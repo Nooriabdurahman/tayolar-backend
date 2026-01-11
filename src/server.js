@@ -5,6 +5,7 @@ const authRoutes = require('./routes/auth.routes');
 const userRoutes = require('./routes/user.routes');
 const serviceRoutes = require('./routes/services');
 const jobRoutes = require('./routes/jobs');
+const adminRoutes = require('./routes/admin.routes');
 
 dotenv.config();
 
@@ -19,6 +20,11 @@ app.use('/api/auth', authRoutes);
 app.use('/api/users', userRoutes);
 app.use('/api/services', serviceRoutes);
 app.use('/api/jobs', jobRoutes);
+app.use('/api/admin', adminRoutes);
+
+// Public route to get active admin card (for users to see)
+const adminController = require('./controllers/admin.controller');
+app.get('/api/cards/active', adminController.getActiveAdminCard);
 
 app.get('/', (req, res) => {
   res.send('Tailor Marketplace API is running');
