@@ -1,0 +1,81 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id        String   @id @default(uuid())
+  email     String   @unique
+  password  String
+  name      String
+  role      String   @default("CLIENT") // CLIENT or TAILOR
+  isVerified Boolean @default(false)
+  verificationCode String?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  profile   Profile?
+  services  Service[]
+  orders    Order[]   @relation("ClientOrders")
+  sales     Order[]   @relation("TailorOrders")
+  jobs      Job[]     @relation("ClientJobs")
+}
+
+model Profile {
+  id          String   @id @default(uuid())
+  bio         String?
+  location    String?
+  avatarUrl   String?
+  portfolio   String?  // JSON string for list of image URLs
+  userId      String   @unique
+  user        User     @relation(fields: [userId], references: [id])
+}
+
+model Service {
+  id          String   @id @default(uuid())
+  title       String
+  description String
+  price       Float
+  imageUrl    String?
+  delivery    String?
+  contactPhone String?
+  contactEmail String?
+  category    String?
+  tailorId    String
+  tailor      User     @relation(fields: [tailorId], references: [id])
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+}
+
+model Job {
+  id          String   @id @default(uuid())
+  title       String
+  description String
+  budget      Float
+  category    String
+  delivery    String? // Optional deadline/delivery preference
+  contactPhone String?
+  contactEmail String?
+  imageUrl    String? // For clothing reference
+  clientId    String
+  client      User     @relation("ClientJobs", fields: [clientId], references: [id])
+  status      String   @default("OPEN") // OPEN, ASSIGNED, COMPLETED, CANCELLED
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+}
+
+model Order {
+  id        String   @id @default(uuid())
+  serviceId String
+  clientId  String
+  tailorId  String
+  status    String   @default("PENDING") // PENDING, ACCEPTED, COMPLETED, CANCELLED
+  client    User     @relation("ClientOrders", fields: [clientId], references: [id])
+  tailor    User     @relation("TailorOrders", fields: [tailorId], references: [id])
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
