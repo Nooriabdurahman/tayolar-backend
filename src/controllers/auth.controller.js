@@ -21,7 +21,7 @@ const signup = async (req, res) => {
         const verificationCode = generateVerificationCode();
 
         // SIMULATE SENDING EMAIL
-        console.log(`\n\n[EMAIL SERVICE] Sending Verification Code to ${email}: ${verificationCode}\n\n`);
+        console.log(\`\\n\\n[EMAIL SERVICE] Sending Verification Code to \${email}: \${verificationCode}\\n\\n\`);
 
         const user = await prisma.user.create({
             data: {
@@ -42,7 +42,6 @@ const signup = async (req, res) => {
             });
         }
 
-        // Do not send token yet. Require verification.
         res.status(201).json({ message: 'Verification code sent to email', email: user.email });
     } catch (error) {
         console.error('Signup error:', error);
@@ -68,7 +67,6 @@ const verifyEmail = async (req, res) => {
             return res.status(400).json({ message: 'Invalid verification code' });
         }
 
-        // Success: Verify user and clear code
         const updatedUser = await prisma.user.update({
             where: { id: user.id },
             data: {
@@ -77,7 +75,6 @@ const verifyEmail = async (req, res) => {
             }
         });
 
-        // Generate Token
         const token = jwt.sign({ userId: updatedUser.id, role: updatedUser.role }, process.env.JWT_SECRET, {
             expiresIn: '7d',
         });
@@ -123,4 +120,30 @@ const login = async (req, res) => {
     }
 };
 
-module.exports = { signup, login, verifyEmail };
+const resendCode = async (req, res) => {
+    const { email } = req.body;
+    try {
+        const user = await prisma.user.findUnique({ where: { email } });
+        if (!user) {
+            return res.status(404).json({ message: 'User not found' });
+        }
+
+        if (user.isVerified) {
+            return res.status(400).json({ message: 'User is already verified' });
+        }
+
+        const verificationCode = generateVerificationCode();
+        await prisma.user.update({
+            where: { id: user.id },
+            data: { verificationCode }
+        });
+
+        console.log(\`\\n\\n[RESEND CODE] New Code for \${email}: \${verificationCode}\\n\\n\`);
+        res.status(200).json({ message: 'Verification code resent successfully' });
+    } catch (error) {
+        console.error('Resend code error:', error);
+        res.status(500).json({ message: 'Internal server error' });
+    }
+};
+
+module.exports = { signup, login, verifyEmail, resendCode };
