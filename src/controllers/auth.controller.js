@@ -21,7 +21,7 @@ const signup = async (req, res) => {
         const verificationCode = generateVerificationCode();
 
         // SIMULATE SENDING EMAIL
-        console.log(\`\\n\\n[EMAIL SERVICE] Sending Verification Code to \${email}: \${verificationCode}\\n\\n\`);
+        console.log(`\n\n[EMAIL SERVICE] Sending Verification Code to ${email}: ${verificationCode}\n\n`);
 
         const user = await prisma.user.create({
             data: {
@@ -138,7 +138,7 @@ const resendCode = async (req, res) => {
             data: { verificationCode }
         });
 
-        console.log(\`\\n\\n[RESEND CODE] New Code for \${email}: \${verificationCode}\\n\\n\`);
+        console.log(`\n\n[RESEND CODE] New Code for ${email}: ${verificationCode}\n\n`);
         res.status(200).json({ message: 'Verification code resent successfully' });
     } catch (error) {
         console.error('Resend code error:', error);
