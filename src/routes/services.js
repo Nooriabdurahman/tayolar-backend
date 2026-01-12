@@ -1,7 +1,16 @@
 const express = require('express');
 const router = express.Router();
 const { PrismaClient } = require('@prisma/client');
+const multer = require('multer');
+const { uploadToBlob } = require('../utils/blobUpload');
 const prisma = new PrismaClient();
+
+
+const upload = multer({
+    storage: multer.memoryStorage(),
+    limits: { fileSize: 10 * 1024 * 1024 } // 10MB
+});
+
 
 /**
  * @swagger
@@ -12,7 +21,7 @@ const prisma = new PrismaClient();
  *     requestBody:
  *       required: true
  *       content:
- *         application/json:
+ *         multipart/form-data:
  *           schema:
  *             type: object
  *             required:
@@ -46,9 +55,13 @@ const prisma = new PrismaClient();
  *               imageUrl:
  *                 type: string
  *                 format: uri
+ *               image:
+ *                 type: string
+ *                 format: binary
  *               tailorId:
  *                 type: string
  *                 format: uuid
+
  *     responses:
  *       201:
  *         description: Service created successfully
@@ -64,9 +77,15 @@ const prisma = new PrismaClient();
  *               $ref: '#/components/schemas/Error'
  */
 // Create a new service
-router.post('/', async (req, res) => {
+router.post('/', upload.single('image'), async (req, res) => {
     try {
-        const { title, description, price, delivery, category, contactPhone, contactEmail, imageUrl, tailorId } = req.body;
+        const { title, description, price, delivery, category, contactPhone, contactEmail, tailorId } = req.body;
+        let imageUrl = req.body.imageUrl;
+
+        if (req.file) {
+            imageUrl = await uploadToBlob(req.file.originalname, req.file.buffer, 'services');
+        }
+
 
         // In a real app, tailorId would come from the authenticated user token
         // For now we accept it in the body or default to a demo user if not present (handled by frontend or middleware)

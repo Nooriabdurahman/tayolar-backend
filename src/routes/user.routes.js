@@ -1,6 +1,13 @@
 const express = require('express');
 const { getProfile, updateProfile } = require('../controllers/user.controller');
 const authMiddleware = require('../middleware/auth.middleware');
+const multer = require('multer');
+
+const upload = multer({
+    storage: multer.memoryStorage(),
+    limits: { fileSize: 5 * 1024 * 1024 } // 5MB
+});
+
 
 const router = express.Router();
 
@@ -49,9 +56,23 @@ router.get('/profile', getProfile);
  *     requestBody:
  *       required: true
  *       content:
- *         application/json:
+ *         multipart/form-data:
  *           schema:
- *             $ref: '#/components/schemas/UpdateProfileRequest'
+ *             type: object
+ *             properties:
+ *               name:
+ *                 type: string
+ *               bio:
+ *                 type: string
+ *               location:
+ *                 type: string
+ *               avatarUrl:
+ *                 type: string
+ *                 format: uri
+ *               avatar:
+ *                 type: string
+ *                 format: binary
+
  *     responses:
  *       200:
  *         description: Profile updated successfully
@@ -70,6 +91,7 @@ router.get('/profile', getProfile);
  *       500:
  *         description: Server error
  */
-router.put('/profile', updateProfile);
+router.put('/profile', upload.single('avatar'), updateProfile);
+
 
 module.exports = router;

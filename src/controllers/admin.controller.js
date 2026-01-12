@@ -1,5 +1,6 @@
 const { PrismaClient } = require('@prisma/client');
-const { put } = require('@vercel/blob');
+const { uploadToBlob } = require('../utils/blobUpload');
+
 
 const prisma = new PrismaClient();
 
@@ -23,12 +24,9 @@ const createAdminCard = async (req, res) => {
 
     // Upload image to Vercel Blob if provided
     if (req.file) {
-      const blob = await put(req.file.originalname, req.file.buffer, {
-        access: 'public',
-        token: process.env.BLOB_READ_WRITE_TOKEN,
-      });
-      imageUrl = blob.url;
+      imageUrl = await uploadToBlob(req.file.originalname, req.file.buffer, 'admin-cards');
     }
+
 
     const card = await prisma.adminCard.create({
       data: {
@@ -55,12 +53,9 @@ const updateAdminCard = async (req, res) => {
 
     // Upload new image to Vercel Blob if provided
     if (req.file) {
-      const blob = await put(req.file.originalname, req.file.buffer, {
-        access: 'public',
-        token: process.env.BLOB_READ_WRITE_TOKEN,
-      });
-      imageUrl = blob.url;
+      imageUrl = await uploadToBlob(req.file.originalname, req.file.buffer, 'admin-cards');
     }
+
 
     const card = await prisma.adminCard.update({
       where: { id },
@@ -127,7 +122,7 @@ const updateCommissionSettings = async (req, res) => {
   try {
     const { rate } = req.body;
     let settings = await prisma.commissionSettings.findFirst();
-    
+
     if (settings) {
       settings = await prisma.commissionSettings.update({
         where: { id: settings.id },
@@ -138,7 +133,7 @@ const updateCommissionSettings = async (req, res) => {
         data: { rate },
       });
     }
-    
+
     res.json(settings);
   } catch (error) {
     console.error('Error updating commission settings:', error);

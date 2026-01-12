@@ -1,7 +1,15 @@
 const express = require('express');
 const router = express.Router();
 const { PrismaClient } = require('@prisma/client');
+const multer = require('multer');
+const { uploadToBlob } = require('../utils/blobUpload');
 const prisma = new PrismaClient();
+
+const upload = multer({
+    storage: multer.memoryStorage(),
+    limits: { fileSize: 10 * 1024 * 1024 } // 10MB
+});
+
 
 /**
  * @swagger
@@ -12,7 +20,7 @@ const prisma = new PrismaClient();
  *     requestBody:
  *       required: true
  *       content:
- *         application/json:
+ *         multipart/form-data:
  *           schema:
  *             type: object
  *             required:
@@ -46,9 +54,13 @@ const prisma = new PrismaClient();
  *               imageUrl:
  *                 type: string
  *                 format: uri
+ *               image:
+ *                 type: string
+ *                 format: binary
  *               clientId:
  *                 type: string
  *                 format: uuid
+
  *     responses:
  *       201:
  *         description: Job created successfully
@@ -64,9 +76,15 @@ const prisma = new PrismaClient();
  *               $ref: '#/components/schemas/Error'
  */
 // Post a new job
-router.post('/', async (req, res) => {
+router.post('/', upload.single('image'), async (req, res) => {
     try {
-        const { title, description, budget, category, delivery, contactPhone, contactEmail, imageUrl, clientId } = req.body;
+        const { title, description, budget, category, delivery, contactPhone, contactEmail, clientId } = req.body;
+        let imageUrl = req.body.imageUrl;
+
+        if (req.file) {
+            imageUrl = await uploadToBlob(req.file.originalname, req.file.buffer, 'jobs');
+        }
+
 
         const job = await prisma.job.create({
             data: {

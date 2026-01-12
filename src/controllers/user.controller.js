@@ -1,4 +1,6 @@
 const { PrismaClient } = require('@prisma/client');
+const { uploadToBlob } = require('../utils/blobUpload');
+
 
 const prisma = new PrismaClient();
 
@@ -29,7 +31,13 @@ const getProfile = async (req, res) => {
 const updateProfile = async (req, res) => {
     try {
         const userId = req.user.userId;
-        const { name, bio, location, avatarUrl } = req.body;
+        const { name, bio, location } = req.body;
+        let avatarUrl = req.body.avatarUrl;
+
+        if (req.file) {
+            avatarUrl = await uploadToBlob(req.file.originalname, req.file.buffer, 'avatars');
+        }
+
 
         // Update User Model (Basic Info)
         const updatedUser = await prisma.user.update({
