@@ -15,7 +15,7 @@ const upload = multer({
  * @swagger
  * /api/jobs:
  *   post:
- *     summary: Create a new job posting
+ *     summary: Create a new job posting with multiple images
  *     tags: [Jobs]
  *     requestBody:
  *       required: true
@@ -53,38 +53,35 @@ const upload = multer({
  *                 format: email
  *               imageUrl:
  *                 type: string
- *                 format: uri
- *               image:
- *                 type: string
- *                 format: binary
+ *                 description: Fallback/Initial image URL
+ *               images:
+ *                 type: array
+ *                 items:
+ *                   type: string
+ *                   format: binary
+ *                 description: Up to 5 reference images
  *               clientId:
  *                 type: string
  *                 format: uuid
-
  *     responses:
  *       201:
  *         description: Job created successfully
- *         content:
- *           application/json:
- *             schema:
- *               $ref: '#/components/schemas/Job'
  *       500:
  *         description: Failed to create job
- *         content:
- *           application/json:
- *             schema:
- *               $ref: '#/components/schemas/Error'
  */
-// Post a new job
-router.post('/', upload.single('image'), async (req, res) => {
+// Post a new job with multiple images
+router.post('/', upload.array('images', 5), async (req, res) => {
     try {
         const { title, description, budget, category, delivery, contactPhone, contactEmail, clientId } = req.body;
-        let imageUrl = req.body.imageUrl;
+        let imageUrls = req.body.imageUrl ? [req.body.imageUrl] : [];
 
-        if (req.file) {
-            imageUrl = await uploadToBlob(req.file.originalname, req.file.buffer, 'jobs');
+        if (req.files && req.files.length > 0) {
+            const uploadPromises = req.files.map(file => 
+                uploadToBlob(file.originalname, file.buffer, 'jobs')
+            );
+            const newUrls = await Promise.all(uploadPromises);
+            imageUrls = [...imageUrls, ...newUrls];
         }
-
 
         const job = await prisma.job.create({
             data: {
@@ -95,7 +92,7 @@ router.post('/', upload.single('image'), async (req, res) => {
                 delivery,
                 contactPhone,
                 contactEmail,
-                imageUrl,
+                imageUrl: imageUrls.join(','),
                 clientId
             }
         });
@@ -116,26 +113,6 @@ router.post('/', upload.single('image'), async (req, res) => {
  *     responses:
  *       200:
  *         description: List of all jobs
- *         content:
- *           application/json:
- *             schema:
- *               type: array
- *               items:
- *                 allOf:
- *                   - $ref: '#/components/schemas/Job'
- *                   - type: object
- *                     properties:
- *                       client:
- *                         type: object
- *                         properties:
- *                           name:
- *                             type: string
- *       500:
- *         description: Failed to fetch jobs
- *         content:
- *           application/json:
- *             schema:
- *               $ref: '#/components/schemas/Error'
  */
 // Get all jobs
 router.get('/', async (req, res) => {
