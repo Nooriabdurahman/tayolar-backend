@@ -23,6 +23,52 @@ model User {
   orders   Order[]   @relation("ClientOrders")
   sales    Order[]   @relation("TailorOrders")
   jobs     Job[]     @relation("ClientJobs")
+  
+  // Social Relations
+  posts     SocialPost[]
+  likes     Like[]
+  
+  followers Follow[] @relation("UserFollowers")
+  following Follow[] @relation("UserFollowing")
+}
+
+model SocialPost {
+  id        String   @id @default(uuid())
+  content   String
+  imageUrl  String?
+  authorId  String
+  author    User     @relation(fields: [authorId], references: [id])
+  likes     Like[]
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model Follow {
+  id          String   @id @default(uuid())
+  followerId  String
+  followingId String
+  follower    User     @relation("UserFollowing", fields: [followerId], references: [id])
+  following   User     @relation("UserFollowers", fields: [followingId], references: [id])
+  createdAt   DateTime @default(now())
+
+  @@unique([followerId, followingId])
+}
+
+model Like {
+  id        String   @id @default(uuid())
+  userId    String
+  user      User     @relation(fields: [userId], references: [id])
+  
+  // Polymorphic-like association
+  entityId   String   // ID of the Post, Service, or Job
+  entityType String   // "POST", "SERVICE", "JOB"
+  
+  post      SocialPost? @relation(fields: [postId], references: [id]) // Optional direct relation for integrity
+  postId    String?
+
+  createdAt DateTime @default(now())
+
+  @@unique([userId, entityId, entityType])
 }
 
 model Profile {

@@ -1,4 +1,4 @@
-import { put } from '@vercel/blob';
+const { put } = require('@vercel/blob');
 
 /**
  * Uploads a file to Vercel Blob storage.
@@ -26,6 +26,6 @@ const uploadToBlob = async (filename, buffer, folder = 'uploads') => {
     }
 };
 
-export default {
+module.exports = {
     uploadToBlob,
 };

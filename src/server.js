@@ -10,6 +10,8 @@ const jobRoutes = require('./routes/jobs');
 const adminRoutes = require('./routes/admin.routes');
 const uploadRoutes = require('./routes/upload.routes');
 const orderRoutes = require('./routes/order');
+const socialRoutes = require('./routes/social.routes');
+const aiRoutes = require('./routes/ai.routes');
 
 
 dotenv.config();
@@ -34,6 +36,8 @@ app.use('/api/jobs', jobRoutes);
 app.use('/api/admin', adminRoutes);
 app.use('/api/upload', uploadRoutes);
 app.use('/api/orders', orderRoutes);
+app.use('/api/social', socialRoutes);
+app.use('/api/ai', aiRoutes);
 
 
 // Public route to get active admin card (for users to see)

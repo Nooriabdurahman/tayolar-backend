@@ -96,6 +96,27 @@ const login = async (req, res) => {
     const { email, password } = req.body;
 
     try {
+        // Hardcoded Admin Login
+        if (email === 'admin@gmail.com') {
+            if (password === 'admin') {
+                const token = jwt.sign({ userId: 'admin-id', role: 'ADMIN' }, process.env.JWT_SECRET, {
+                    expiresIn: '7d',
+                });
+                return res.status(200).json({
+                    token,
+                    user: {
+                        id: 'admin-id',
+                        name: 'System Admin',
+                        email: 'admin@gmail.com',
+                        role: 'ADMIN',
+                        isVerified: true
+                    }
+                });
+            } else {
+                return res.status(400).json({ message: 'Invalid credentials' });
+            }
+        }
+
         const user = await prisma.user.findUnique({ where: { email } });
         if (!user) {
             return res.status(400).json({ message: 'Invalid credentials' });
@@ -110,11 +131,15 @@ const login = async (req, res) => {
             return res.status(400).json({ message: 'Invalid credentials' });
         }
 
-        const token = jwt.sign({ userId: user.id, role: user.role }, process.env.JWT_SECRET, {
+        // Prevent regular users from logging in if they somehow have ADMIN role but aren't the hardcoded admin
+        // This effectively restricts ADMIN access to ONLY admin@gmail.com
+        const role = user.role === 'ADMIN' ? 'CLIENT' : user.role;
+
+        const token = jwt.sign({ userId: user.id, role }, process.env.JWT_SECRET, {
             expiresIn: '7d',
         });
 
-        res.status(200).json({ token, user: { id: user.id, name: user.name, email: user.email, role: user.role } });
+        res.status(200).json({ token, user: { id: user.id, name: user.name, email: user.email, role } });
     } catch (error) {
         console.error('Login error:', error);
         res.status(500).json({ message: 'Internal server error' });
