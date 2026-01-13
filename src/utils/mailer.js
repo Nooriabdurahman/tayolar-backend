@@ -1,4 +1,4 @@
-import { createTransport, createTestAccount, getTestMessageUrl } from 'nodemailer';
+const nodemailer = require('nodemailer');
 
 let transporter;
 
@@ -6,18 +6,21 @@ const getTransporter = async () => {
     if (transporter) return transporter;
 
     if (process.env.EMAIL_USER && process.env.EMAIL_PASS) {
-        console.log('Using configured SMTP credentials');
-        transporter = createTransport({
+        console.log('Using configured SMTP credentials:', process.env.EMAIL_USER);
+        transporter = nodemailer.createTransport({
             service: 'gmail',
             auth: {
                 user: process.env.EMAIL_USER,
                 pass: process.env.EMAIL_PASS
+            },
+            tls: {
+                rejectUnauthorized: false
             }
         });
     } else {
         console.warn('\n\n[WARNING] Email credentials not set. Creating a test account via Ethereal...');
-        const testAccount = await createTestAccount();
-        transporter = createTransport({
+        const testAccount = await nodemailer.createTestAccount();
+        transporter = nodemailer.createTransport({
             host: 'smtp.ethereal.email',
             port: 587,
             secure: false,
@@ -35,7 +38,7 @@ const sendVerificationEmail = async (email, code) => {
     try {
         const mailTransporter = await getTransporter();
         const mailOptions = {
-            from: '"TailorHub" <noreply@tayolar.com>',
+            from: '"TailorHub" <' + (process.env.EMAIL_USER || 'noreply@tayolar.com') + '>',
             to: email,
             subject: 'Email Verification - TailorHub',
             html: `
@@ -54,12 +57,11 @@ const sendVerificationEmail = async (email, code) => {
 
         const info = await mailTransporter.sendMail(mailOptions);
         console.log(`Verification email sent to ${email}`);
-
-        // If using Ethereal, log the preview URL
-        if (getTestMessageUrl(info)) {
-            console.log(`Preview URL: ${getTestMessageUrl(info)}`);
+        
+        if (nodemailer.getTestMessageUrl(info)) {
+            console.log(`Preview URL: ${nodemailer.getTestMessageUrl(info)}`);
         }
-
+        
         return true;
     } catch (error) {
         console.error('Error sending email:', error);
@@ -67,4 +69,4 @@ const sendVerificationEmail = async (email, code) => {
     }
 };
 
-export default { sendVerificationEmail };
+module.exports = { sendVerificationEmail };
