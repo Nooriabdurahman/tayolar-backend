@@ -1,6 +1,7 @@
 const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
 const { PrismaClient } = require('@prisma/client');
+const { sendVerificationEmail } = require('../utils/mailer').default;
 
 const prisma = new PrismaClient();
 
@@ -20,8 +21,8 @@ const signup = async (req, res) => {
         const hashedPassword = await bcrypt.hash(password, 10);
         const verificationCode = generateVerificationCode();
 
-        // SIMULATE SENDING EMAIL
-        console.log(`\n\n[EMAIL SERVICE] Sending Verification Code to ${email}: ${verificationCode}\n\n`);
+        // SEND REAL EMAIL
+        await sendVerificationEmail(email, verificationCode);
 
         const user = await prisma.user.create({
             data: {
@@ -138,7 +139,7 @@ const resendCode = async (req, res) => {
             data: { verificationCode }
         });
 
-        console.log(`\n\n[RESEND CODE] New Code for ${email}: ${verificationCode}\n\n`);
+        await sendVerificationEmail(email, verificationCode);
         res.status(200).json({ message: 'Verification code resent successfully' });
     } catch (error) {
         console.error('Resend code error:', error);
