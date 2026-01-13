@@ -1,4 +1,4 @@
-const { uploadToBlob } = require('../utils/blobUpload');
+const { uploadToBlob } = require('../utils/blobUpload').default;
 
 /**
  * Handle individual file upload

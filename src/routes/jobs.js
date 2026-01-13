@@ -2,7 +2,7 @@ const express = require('express');
 const router = express.Router();
 const { PrismaClient } = require('@prisma/client');
 const multer = require('multer');
-const { uploadToBlob } = require('../utils/blobUpload');
+const { uploadToBlob } = require('../utils/blobUpload').default;
 const prisma = new PrismaClient();
 
 const upload = multer({
@@ -76,7 +76,7 @@ router.post('/', upload.array('images', 5), async (req, res) => {
         let imageUrls = req.body.imageUrl ? [req.body.imageUrl] : [];
 
         if (req.files && req.files.length > 0) {
-            const uploadPromises = req.files.map(file => 
+            const uploadPromises = req.files.map(file =>
                 uploadToBlob(file.originalname, file.buffer, 'jobs')
             );
             const newUrls = await Promise.all(uploadPromises);
