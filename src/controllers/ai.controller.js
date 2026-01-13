@@ -1,5 +1,5 @@
 const { OpenAI } = require('openai'); // Optional: if you add real AI later
-// For now, we'll use a simple rule-based system or mock response since we might not have an API key
+
 
 const chat = async (req, res) => {
     try {

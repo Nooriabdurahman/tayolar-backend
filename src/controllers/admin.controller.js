@@ -1,5 +1,5 @@
 const { PrismaClient } = require('@prisma/client');
-const { uploadToBlob } = require('../utils/blobUpload').default;
+const { uploadToBlob } = require('../utils/blobUpload');
 
 
 const prisma = new PrismaClient();

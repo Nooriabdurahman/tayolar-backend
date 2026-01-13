@@ -2,7 +2,7 @@ const express = require('express');
 const router = express.Router();
 const { PrismaClient } = require('@prisma/client');
 const multer = require('multer');
-const { uploadToBlob } = require('../utils/blobUpload').default;
+const { uploadToBlob } = require('../utils/blobUpload');
 const prisma = new PrismaClient();
 
 const upload = multer({
